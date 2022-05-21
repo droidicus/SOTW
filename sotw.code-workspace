@@ -1,0 +1,16 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"cSpell.words": [
+			"cumsum",
+			"dateutil",
+			"dtindex",
+			"relativedelta",
+			"seaborn"
+		]
+	}
+}
