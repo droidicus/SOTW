@@ -10,7 +10,8 @@
 			"dateutil",
 			"dtindex",
 			"relativedelta",
-			"seaborn"
+			"seaborn",
+			"sotw"
 		]
 	}
 }

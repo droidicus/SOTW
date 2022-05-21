@@ -14,7 +14,7 @@ COMMISSION_RATE = 0.3
 FILENAME = "sotw.csv"
 
 # The main thing
-def main(filename):
+def main(filename, rate):
     # Read in the data
     df = pd.read_csv(filename)
 
@@ -45,18 +45,24 @@ def main(filename):
     df_purchases = df_week[df_week["type"] == "purchase"]
 
     # Group by person charging, calculate commissions, print it out
-    commissions = (
-        df_purchases.groupby(["requestor"]).sum()["change"] * COMMISSION_RATE
-    ).round()
+    commissions = (df_purchases.groupby(["requestor"]).sum()["change"] * rate).round()
     print(commissions)
 
 
 # Are you prepared?
 if __name__ == "__main__":
-    # Performing diagnostic
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--file", type=str, default=FILENAME)
+    # Performing diagnostics
+    parser = argparse.ArgumentParser(
+        description="Simple utility to calculate commissions from a bank CSV export.",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    parser.add_argument(
+        "--file", type=str, default=FILENAME, help="CSV bank export file to analyze."
+    )
+    parser.add_argument(
+        "--rate", type=float, default=COMMISSION_RATE, help="Sales commission rate."
+    )
     args = parser.parse_args()
 
     # Affirm
-    main(args.file)
+    main(args.file, args.rate)
