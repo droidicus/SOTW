@@ -3,10 +3,9 @@
     output the data to the console for human consumption
 """
 import argparse
-from datetime import datetime, time, timedelta
+from datetime import date, datetime, time, timedelta, timezone
 
 import pandas as pd
-import seaborn as sns
 from dateutil.relativedelta import FR, relativedelta
 
 # CONSTANTS
@@ -14,7 +13,7 @@ COMMISSION_RATE = 0.3
 FILENAME = "sotw.csv"
 
 # The main thing
-def main(filename, rate):
+def main(filename, rate, end_date):
     # Read in the data
     df = pd.read_csv(filename)
 
@@ -25,7 +24,7 @@ def main(filename, rate):
     df["balance"] = df.loc[::-1, "change"].cumsum()[::-1]
 
     # Decode the timestamp
-    df["datetime"] = pd.to_datetime(df["timestamp"])
+    df["datetime"] = pd.to_datetime(df["timestamp"], utc=True)
 
     # Someone doesn't sanitize their inputs...
     df["requestor"] = df["requestor"].str.replace("\t", " ")
@@ -34,19 +33,36 @@ def main(filename, rate):
     # Index on the datetime
     df_dtindex = df.set_index("datetime")
 
-    # Calculate the last friday of a full week of data
-    last_friday = datetime.now().date() + relativedelta(weekday=FR(-1))
-    last_friday = datetime.combine(last_friday, time(0))
+    # Deal the end date
+    if end_date is None:
+        # Calculate the last friday of a full week of data
+        end_date = datetime.now(timezone.utc).date() + relativedelta(weekday=FR(-1))
+    else:
+        # Convert from ISO format date
+        end_date = date.fromisoformat(end_date)
+
+    # Start at midnight UTC, calculate back 1 week
+    end_date = datetime.combine(end_date, time(0, tzinfo=timezone.utc))
+    start_date = end_date - timedelta(weeks=1)
 
     # Slice the week of transactions
-    df_week = df_dtindex.loc[last_friday : last_friday - timedelta(weeks=1)]
+    df_week = df_dtindex.loc[end_date:start_date]
 
     # Select the purchases
     df_purchases = df_week[df_week["type"] == "purchase"]
 
+    # Print out some data, make sure the deltas make sense!
+    print(f"Commissions for the week {start_date} to {end_date} at a rate of {rate}")
+    print(
+        f"First sale delta: {end_date - df_purchases.index[0]} - {df_purchases.index[0]}"
+    )
+    print(
+        f"Last sale delta: {df_purchases.index[-1] - start_date} - {df_purchases.index[-1]}"
+    )
+
     # Group by person charging, calculate commissions, print it out
     commissions = (df_purchases.groupby(["requestor"]).sum()["change"] * rate).round()
-    print(commissions)
+    print(commissions.sort_values(ascending=False))
 
 
 # Are you prepared?
@@ -56,6 +72,10 @@ if __name__ == "__main__":
         description="Simple utility to calculate commissions from a bank CSV export.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
+    help_str = (
+        "End date for week, YYYY-MM-DD format. If not given, use the most recent Friday"
+    )
+    parser.add_argument("--end_date", type=str, default=None, help=help_str)
     parser.add_argument(
         "--file", type=str, default=FILENAME, help="CSV bank export file to analyze."
     )
@@ -65,4 +85,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Affirm
-    main(args.file, args.rate)
+    main(args.file, args.rate, args.end_date)
