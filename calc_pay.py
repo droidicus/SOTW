@@ -24,12 +24,14 @@ def main(filename, rate, end_date=None, slice_weeks=1, quiet=False, do_plots=Fal
     df_purchases = df[df["type"] == "purchase"]
 
     # Print out some data, make sure the deltas make sense!
-    print(f"Commissions for the week {start_date} to {end_date} at a rate of {rate}:\n")
     print(
-        f"First sale delta: {end_date - df_purchases.index[0]} - {df_purchases.index[0]}"
+        f"Commissions for the week {start_date.strftime('%Y-%m-%d %H:%M:%S')} to {end_date.strftime('%Y-%m-%d %H:%M:%S')} at a rate of {rate}:\n"
     )
     print(
-        f"Last sale delta: {df_purchases.index[-1] - start_date} - {df_purchases.index[-1]}"
+        f"First sale delta: {end_date - df_purchases.index[0]} - {df_purchases.index[0].strftime('%Y-%m-%d %H:%M:%S')}"
+    )
+    print(
+        f"Last sale delta: {df_purchases.index[-1] - start_date} - {df_purchases.index[-1].strftime('%Y-%m-%d %H:%M:%S')}"
     )
     print(f"Total delta: {df_purchases.index[0] - df_purchases.index[-1]}\n")
 
@@ -184,7 +186,10 @@ if __name__ == "__main__":
     #     help="Process ALL data instead of only one week.",
     # )
     parser.add_argument(
-        "--weeks", type=int, default=1, help="Number of weeks to slice from the data, -1 for all data"
+        "--weeks",
+        type=int,
+        default=1,
+        help="Number of weeks to slice from the data, -1 for all data",
     )
     parser.add_argument(
         "--quiet", action="store_true", help="Don't produce as much output."

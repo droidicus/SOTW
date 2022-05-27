@@ -62,4 +62,5 @@ def read_bank_csv(filename, end_date=None, slice_weeks=1):
 
 def pretty_print_df(df):
     df = df[["change", "comment", "requestor"]]
+    df.index = df.index.map(lambda t: t.strftime("%Y-%m-%d %H:%M"))
     print(df.to_markdown())
