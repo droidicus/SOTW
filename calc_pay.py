@@ -75,6 +75,14 @@ def print_details(df, do_plots=False):
         + df_withdraws["change"].sum()
     )
     week_sum = df["change"].sum()
+
+    # Check them
+    if week_sum != decompose_sum:
+        raise ValueError(
+            "SOMETHING IS WRONG!!! Sum of all transactions not matching sum by transaction types"
+        )
+
+    # Did we make any money?
     gross_profit = (
         df_purchases["change"].sum()
         + df_greg["change"].sum()
@@ -83,12 +91,6 @@ def print_details(df, do_plots=False):
     )
     expenses = df_outgoing_transfers["change"].sum() + df_withdraws["change"].sum()
     net_profit = gross_profit + expenses
-
-    # Check them
-    if week_sum != decompose_sum:
-        raise ValueError(
-            "SOMETHING IS WRONG!!! Sum of all transactions not matching sum by transaction types"
-        )
 
     # Print out stats
     print(f"\nGanja Greg sales: ${df_greg['change'].sum():,.0f}")
@@ -182,7 +184,7 @@ if __name__ == "__main__":
     #     help="Process ALL data instead of only one week.",
     # )
     parser.add_argument(
-        "--weeks", type=int, default=1, help="Number of weeks to slice from the data"
+        "--weeks", type=int, default=1, help="Number of weeks to slice from the data, -1 for all data"
     )
     parser.add_argument(
         "--quiet", action="store_true", help="Don't produce as much output."

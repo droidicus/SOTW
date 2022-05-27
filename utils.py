@@ -11,9 +11,8 @@ def read_bank_csv(filename, end_date=None, slice_weeks=1):
         end_date (None, str): If None (default) picks end date that is the most recent
                               Friday at Midnight UTC. If string, it is expected to be
                               formatted in ISO format (YYYY-MM-DD).
-        slice_weeks (None, int): If None, does not slice data and will return the whole
-                                 dataframe. If an int (default=1), will slice off that
-                                 number of weeks from the dataframe.
+        slice_weeks (int): Will slice off that number of weeks from the dataframe.
+                           Default = 1, if value is negative e.g. `-1` all data will be used
 
     Returns:
         df (dataframe), start_date (datetime), end_date (datetime)): The data and start/end
@@ -34,7 +33,7 @@ def read_bank_csv(filename, end_date=None, slice_weeks=1):
     # Index on the datetime
     df = df.set_index("datetime")
 
-    if slice_weeks is None:
+    if slice_weeks < 0:
         # Start and end at bounds of timestamps
         end_date = df.index.max()
         start_date = df.index.min()
