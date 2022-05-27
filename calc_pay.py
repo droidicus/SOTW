@@ -8,48 +8,20 @@ from datetime import date, datetime, time, timedelta, timezone
 import pandas as pd
 from dateutil.relativedelta import FR, relativedelta
 
+from utils import read_bank_csv
+
 # CONSTANTS
 COMMISSION_RATE = 0.3
 FILENAME = "sotw.csv"
 
+
 # The main thing
-def main(filename, rate, end_date):
+def main(filename, rate, end_date=None):
     # Read in the data
-    df = pd.read_csv(filename)
-
-    # Decode the 'direction' field
-    df["change"] = df["change"] * (1 - 2 * (df["direction"] == "outgoing"))
-
-    # lol... cumsum...
-    df["balance"] = df.loc[::-1, "change"].cumsum()[::-1]
-
-    # Decode the timestamp
-    df["datetime"] = pd.to_datetime(df["timestamp"], utc=True)
-
-    # Someone doesn't sanitize their inputs...
-    df["requestor"] = df["requestor"].str.replace("\t", " ")
-    df["requestor"] = df["requestor"].str.replace("\n", " ")
-
-    # Index on the datetime
-    df_dtindex = df.set_index("datetime")
-
-    # Deal the end date
-    if end_date is None:
-        # Calculate the last friday of a full week of data
-        end_date = datetime.now(timezone.utc).date() + relativedelta(weekday=FR(-1))
-    else:
-        # Convert from ISO format date
-        end_date = date.fromisoformat(end_date)
-
-    # Start at midnight UTC, calculate back 1 week
-    end_date = datetime.combine(end_date, time(0, tzinfo=timezone.utc))
-    start_date = end_date - timedelta(weeks=1)
-
-    # Slice the week of transactions
-    df_week = df_dtindex.loc[end_date:start_date]
+    df, start_date, end_date = read_bank_csv(filename, end_date)
 
     # Select the purchases
-    df_purchases = df_week[df_week["type"] == "purchase"]
+    df_purchases = df[df["type"] == "purchase"]
 
     # Print out some data, make sure the deltas make sense!
     print(f"Commissions for the week {start_date} to {end_date} at a rate of {rate}")
@@ -72,9 +44,7 @@ if __name__ == "__main__":
         description="Simple utility to calculate commissions from a bank CSV export.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    help_str = (
-        "End date for week, YYYY-MM-DD format. If not given, use the most recent Friday"
-    )
+    help_str = "End date for week, YYYY-MM-DD (ISO) format. If not given, use the most recent Friday"
     parser.add_argument("--end_date", type=str, default=None, help=help_str)
     parser.add_argument(
         "--file", type=str, default=FILENAME, help="CSV bank export file to analyze."
