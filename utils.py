@@ -3,8 +3,21 @@ from datetime import date, datetime, time, timedelta, timezone
 from dateutil.relativedelta import relativedelta, FR
 
 
-def read_bank_csv(filename, end_date=None, slice_week=True):
-    """ """
+def read_bank_csv(filename, end_date=None, slice_weeks=1):
+    """Reads LS Bank CSV file and process into a reasonably formatted dataframe.
+
+    Args:
+        filename (str): File to decode.
+        end_date (None, str): If None (default) picks end date that is the most recent
+                              Friday at Midnight UTC. If string, it is expected to be
+                              formatted in ISO format (YYYY-MM-DD).
+        slice_weeks (None, int): If None, does not slice data and will return the whole
+                                 dataframe. If an int (default=1), will slice off that
+                                 number of weeks from the dataframe.
+
+    Returns:
+        df (dataframe), start_date (datetime), end_date (datetime)): The data and start/end
+    """
     # Read in the data
     df = pd.read_csv(filename)
 
@@ -21,7 +34,11 @@ def read_bank_csv(filename, end_date=None, slice_week=True):
     # Index on the datetime
     df = df.set_index("datetime")
 
-    if slice_week:
+    if slice_weeks is None:
+        # Start and end at bounds of timestamps
+        end_date = df.index.max()
+        start_date = df.index.min()
+    else:
         # Deal with the end date
         if end_date is None:
             # Calculate the last friday of a full week of data
@@ -30,21 +47,17 @@ def read_bank_csv(filename, end_date=None, slice_week=True):
             # Convert from ISO format date
             end_date = date.fromisoformat(end_date)
 
-        # Start at midnight UTC, calculate back 1 week
+        # Start at midnight UTC, calculate start date from delta
         end_date = datetime.combine(end_date, time(0, tzinfo=timezone.utc))
-        start_date = end_date - timedelta(weeks=1)
+        start_date = end_date - timedelta(weeks=slice_weeks)
 
         # Slice the week of transactions
         df = df.loc[end_date:start_date]
-    else:
-        # Start and end at bounds of timestamps
-        end_date = df.index.max()
-        start_date = df.index.min()
 
     # lol... cumsum... (reversed)
     df["balance"] = df["change"][::-1].cumsum()[::-1]
 
-    # Return dataframe
+    # Return dataframe and bounds
     return df, start_date, end_date
 
 

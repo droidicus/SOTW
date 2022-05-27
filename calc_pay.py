@@ -16,9 +16,9 @@ FILENAME = "sotw.csv"
 
 
 # The main thing
-def main(filename, rate, end_date=None, all=False, quiet=False, do_plots=False):
+def main(filename, rate, end_date=None, slice_weeks=1, quiet=False, do_plots=False):
     # Read in the data
-    df, start_date, end_date = read_bank_csv(filename, end_date, not all)
+    df, start_date, end_date = read_bank_csv(filename, end_date, slice_weeks)
 
     # Select the purchases
     df_purchases = df[df["type"] == "purchase"]
@@ -31,6 +31,7 @@ def main(filename, rate, end_date=None, all=False, quiet=False, do_plots=False):
     print(
         f"Last sale delta: {df_purchases.index[-1] - start_date} - {df_purchases.index[-1]}"
     )
+    print(f"Total delta: {df_purchases.index[0] - df_purchases.index[-1]}\n")
 
     # Group by person charging, calculate commissions, print it out
     commissions = (
@@ -110,6 +111,11 @@ def print_details(df, do_plots=False):
 
     if do_plots:
         # Delta balance over the time slice
+        df.plot(y="balance", title="Delta Bank Balance").figure.savefig(
+            "delta_balance.png", dpi=300
+        )
+
+        # Sales totals per hour of the day
         purchases_hr = (
             df_purchases.groupby(df_purchases.index.hour)
             .sum()[["change"]]
@@ -170,10 +176,13 @@ if __name__ == "__main__":
     parser.add_argument(
         "--rate", type=float, default=COMMISSION_RATE, help="Sales commission rate."
     )
+    # parser.add_argument(
+    #     "--all",
+    #     action="store_true",
+    #     help="Process ALL data instead of only one week.",
+    # )
     parser.add_argument(
-        "--all",
-        action="store_true",
-        help="Process ALL data instead of only one week.",
+        "--weeks", type=int, default=1, help="Number of weeks to slice from the data"
     )
     parser.add_argument(
         "--quiet", action="store_true", help="Don't produce as much output."
@@ -182,4 +191,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Affirm
-    main(args.file, args.rate, args.end_date, args.all, args.quiet, args.plot)
+    main(args.file, args.rate, args.end_date, args.weeks, args.quiet, args.plot)
