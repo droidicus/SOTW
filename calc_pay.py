@@ -4,7 +4,11 @@
 """
 import argparse
 
+import pandas as pd
+import matplotlib.pyplot as plt
+
 from utils import read_bank_csv, pretty_print_df
+
 
 # CONSTANTS
 COMMISSION_RATE = 0.3
@@ -12,7 +16,7 @@ FILENAME = "sotw.csv"
 
 
 # The main thing
-def main(filename, rate, end_date=None, all=False, quiet=False):
+def main(filename, rate, end_date=None, all=False, quiet=False, do_plots=False):
     # Read in the data
     df, start_date, end_date = read_bank_csv(filename, end_date, not all)
 
@@ -38,10 +42,10 @@ def main(filename, rate, end_date=None, all=False, quiet=False):
 
     # Verbose output
     if not quiet:
-        print_details(df)
+        print_details(df, do_plots)
 
 
-def print_details(df):
+def print_details(df, do_plots=False):
     # Purchases
     df_purchases = df[df["type"] == "purchase"]
 
@@ -77,20 +81,20 @@ def print_details(df):
         + df_incoming_transfers["change"].sum()
     )
     expenses = df_outgoing_transfers["change"].sum() + df_withdraws["change"].sum()
-    net_profit = gross_profit + expenses  # - commissions.sum()
+    net_profit = gross_profit + expenses
 
     # Check them
     if week_sum != decompose_sum:
         raise ValueError(
-            "SOMETHING IS WRONG!!! Sum of all transactions not matching sum by transction types"
+            "SOMETHING IS WRONG!!! Sum of all transactions not matching sum by transaction types"
         )
 
     # Print out stats
-    print("\nBalance validation passed.")
+    print(f"\nGanja Greg sales: ${df_greg['change'].sum():,.0f}")
+    print("\nBalance validation passed!")
     print(f"Gross profit:\t${gross_profit:,.0f}")
     print(f"Expenses:\t${-expenses:,.0f}")
     print(f"Net profit:\t${net_profit:,.0f}")
-    print(f"\nGanja Greg sales: ${df_greg['change'].sum():,.0f}")
 
     print("\nDeposits:")
     pretty_print_df(df_deposits)
@@ -103,6 +107,52 @@ def print_details(df):
 
     print("\nWithdrawals:")
     pretty_print_df(df_withdraws)
+
+    if do_plots:
+        # Delta balance over the time slice
+        purchases_hr = (
+            df_purchases.groupby(df_purchases.index.hour)
+            .sum()[["change"]]
+            .rename(columns={"change": "humans"})
+        )
+        greg_hr = (
+            df_greg.groupby(df_greg.index.hour)
+            .sum()[["change"]]
+            .rename(columns={"change": "greg"})
+        )
+        combined_hr = (
+            pd.concat([purchases_hr, greg_hr], axis=1)
+            .fillna(0)
+            .sort_index()
+            .rename_axis("Hour Of Day (LS)")
+        )
+        combined_hr.index = (combined_hr.index - 6) % 24
+        combined_hr = combined_hr.sort_index()
+        ax = combined_hr.plot(
+            title="Sales Totals by Hour of the Day", ylabel="Sales totals ($)"
+        )
+        plt.axvline(12, color="black", linestyle="--")
+        ax.figure.savefig("sales_per_hr.png", dpi=300)
+
+        # Sales totals per day of week
+        purchases_day = (
+            df_purchases.groupby(df_purchases.index.dayofweek)
+            .sum()[["change"]]
+            .rename(columns={"change": "humans"})
+        )
+        greg_day = (
+            df_greg.groupby(df_greg.index.dayofweek)
+            .sum()[["change"]]
+            .rename(columns={"change": "greg"})
+        )
+        combined_day = (
+            pd.concat([purchases_day, greg_day], axis=1).fillna(0).sort_index()
+        )
+        combined_day["Day of Week"] = ["Fri", "Sat", "Sun", "Mon", "Tues", "Wed", "Thu"]
+        combined_day = combined_day.set_index("Day of Week")
+        combined_day.plot(
+            title="Sales Totals by Day of the Week", ylabel="Sales totals ($)"
+        ).figure.savefig("sales_per_day.png", dpi=300)
 
 
 # Are you prepared?
@@ -128,7 +178,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--quiet", action="store_true", help="Don't produce as much output."
     )
+    parser.add_argument("--plot", action="store_true", help="Make plots of stuff.")
     args = parser.parse_args()
 
     # Affirm
-    main(args.file, args.rate, args.end_date, args.all, args.quiet)
+    main(args.file, args.rate, args.end_date, args.all, args.quiet, args.plot)

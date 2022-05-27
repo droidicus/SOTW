@@ -6,14 +6,20 @@
 	],
 	"settings": {
 		"cSpell.words": [
+			"axvline",
 			"cumsum",
 			"dataframe",
 			"dateutil",
+			"dayofweek",
 			"dtindex",
+			"fillna",
 			"floatfmt",
+			"linestyle",
 			"relativedelta",
+			"savefig",
 			"seaborn",
-			"sotw"
+			"sotw",
+			"ylabel"
 		]
 	}
 }

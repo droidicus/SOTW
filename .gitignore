@@ -133,3 +133,7 @@ dmypy.json
 
 # Data files
 *.csv
+
+# pretty pictures
+*.png
+/plots

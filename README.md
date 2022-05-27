@@ -17,7 +17,7 @@ Accounting and data analytics for SOTW
 Download at least 1 full week of bank data that includes the Fri-Fri time period you want to analyze. More is fine, less is bad. Put CSV file in the repo directory.
 
 ## Help
-Execult the following to get the build-in help:
+Execute the following to get the build-in help:
 
 `pipenv run python calc_pay.py --help`
 
@@ -29,6 +29,10 @@ From the repo directory execute the following command to use the file `sotw.csv`
 To accept the defaults and run the file `sotw.csv` from the most recent Friday at midnight to 2 Friday's ago at midnight:
 
 `pipenv run python calc_pay.py`
+
+The options `--quiet` and `--all` can also be used to reduce the information provided and show the analysis from the whole CSV file (respectively):
+
+`pipenv run python calc_pay.py --quiet --all`
 
 ## NOTE
 ALWAYS make sure the first sale and last sale deltas make sense, if there is more than a short time here it may indicate missing data.
