@@ -10,6 +10,7 @@
 			"dataframe",
 			"dateutil",
 			"dtindex",
+			"floatfmt",
 			"relativedelta",
 			"seaborn",
 			"sotw"
