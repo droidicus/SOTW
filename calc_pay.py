@@ -22,16 +22,17 @@ def main(filename, rate, end_date=None, slice_weeks=1, quiet=False, do_plots=Fal
 
     # Select the purchases
     df_purchases = df[df["type"] == "purchase"]
+    df_purchases = df_purchases[df_purchases["comment"] != "Purchase From Store"]
 
     # Print out some data, make sure the deltas make sense!
     print(
         f"Commissions for the week {start_date.strftime('%Y-%m-%d %H:%M:%S')} to {end_date.strftime('%Y-%m-%d %H:%M:%S')} at a rate of {rate}:\n"
     )
     print(
-        f"First sale delta: {end_date - df_purchases.index[0]} - {df_purchases.index[0].strftime('%Y-%m-%d %H:%M:%S')}"
+        f"First sale delta: {df_purchases.index[-1] - start_date} - {df_purchases.index[-1].strftime('%Y-%m-%d %H:%M:%S')}"
     )
     print(
-        f"Last sale delta: {df_purchases.index[-1] - start_date} - {df_purchases.index[-1].strftime('%Y-%m-%d %H:%M:%S')}"
+        f"Last sale delta: {end_date - df_purchases.index[0]} - {df_purchases.index[0].strftime('%Y-%m-%d %H:%M:%S')}"
     )
     print(f"Total delta: {df_purchases.index[0] - df_purchases.index[-1]}\n")
 
@@ -51,12 +52,18 @@ def main(filename, rate, end_date=None, slice_weeks=1, quiet=False, do_plots=Fal
 def print_details(df, do_plots=False):
     # Purchases
     df_purchases = df[df["type"] == "purchase"]
+    store_mask = df_purchases["comment"] == "Purchase From Store"
+    df_greg_purchases = df_purchases[store_mask]
+    df_purchases = df_purchases[~store_mask]
 
-    # Ganja Greg and Deposits
+    # Deposits
     df_deposits = df[df["type"] == "deposit"]
     store_mask = df_deposits["comment"] == "Purchase From Store"
-    df_greg = df_deposits[store_mask]
+    df_greg_deposits = df_deposits[store_mask]
     df_deposits = df_deposits[~store_mask]
+
+    # Ganja Greg
+    df_greg = pd.concat([df_greg_purchases, df_greg_deposits]).sort_index()
 
     # Transfers
     df_transfers = df[df["type"] == "transfer"]
@@ -80,7 +87,7 @@ def print_details(df, do_plots=False):
 
     # Check them
     if week_sum != decompose_sum:
-        raise ValueError(
+        raise RuntimeError(
             "SOMETHING IS WRONG!!! Sum of all transactions not matching sum by transaction types"
         )
 
