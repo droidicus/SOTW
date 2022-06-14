@@ -11,7 +11,7 @@ from utils import read_bank_csv, pretty_print_df
 
 
 # CONSTANTS
-COMMISSION_RATE = 0.3
+COMMISSION_RATE = 0.45
 FILENAME = "sotw.csv"
 
 
