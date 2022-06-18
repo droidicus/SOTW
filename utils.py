@@ -1,6 +1,6 @@
 import pandas as pd
 from datetime import date, datetime, time, timedelta, timezone
-from dateutil.relativedelta import relativedelta, FR
+from dateutil.relativedelta import relativedelta, SA
 
 
 def read_bank_csv(filename, end_date=None, slice_weeks=1):
@@ -41,7 +41,7 @@ def read_bank_csv(filename, end_date=None, slice_weeks=1):
         # Deal with the end date
         if end_date is None:
             # Calculate the last friday of a full week of data
-            end_date = datetime.now(timezone.utc).date() + relativedelta(weekday=FR(-1))
+            end_date = datetime.now(timezone.utc).date() + relativedelta(weekday=SA(-1))
         else:
             # Convert from ISO format date
             end_date = date.fromisoformat(end_date)
